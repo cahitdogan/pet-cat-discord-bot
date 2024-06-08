@@ -17,6 +17,8 @@ module.exports = {
 			return interaction.reply(`There is no command with name \`${commandName}\`!`);
 		}
 
+        command.category = "create-pet";
+
 		delete require.cache[require.resolve(`../${command.category}/${command.data.name}.js`)];
 
 		try {
