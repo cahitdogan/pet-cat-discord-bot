@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { collection, setDoc, doc, getDocFromServer, getDocsFromServer } = require("firebase/firestore");
-const db = require("@root/firebase");
+const { usersCollectionRef } = require("@root/firebase.js");
 
 module.exports = {
     cooldown: 15,
@@ -18,8 +18,7 @@ module.exports = {
         const userID = interaction.user.id;
         const userName = interaction.user.username;
 
-        const userDocRef = doc(collection(db, "users"), userID);
-        const petCollectionRef = collection(userDocRef, "pets");
+        const userDocRef = doc(usersCollectionRef, userID);
 
         if (!(userID === "1124456694102102088")) { //for developer\tester
             if (getDocsFromServer(petCollectionRef)) {
@@ -27,12 +26,24 @@ module.exports = {
                 return;
             }
         }
+
+        const petID = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
         
-        const petDocRef = doc(petCollectionRef, petName);
+        const petsCollectionRef = collection(userDocRef, "pets");
+        const petDocRef = doc(petsCollectionRef, petID);
         const now = Date.now();
 
         try {
-            await setDoc(userDocRef, {coin: 0})
+            await setDoc(userDocRef, {
+                coin: 0,
+                pets: [
+                    { petID: petID, owner: true },
+                ]
+            })
 
             await setDoc(petDocRef, {
                 ownerName: userName,
@@ -60,6 +71,7 @@ module.exports = {
         try {
             const userDocSnap = await getDocFromServer(userDocRef);
             const userData = userDocSnap.data();
+
             const petDocSnap = await getDocFromServer(petDocRef);
             const petData = petDocSnap.data();
 
@@ -67,7 +79,7 @@ module.exports = {
             const { level, health } = petData;
             const { water, food, sleep, play, shower, toilet} = petData.stats;
 
-            const exampleEmbed = new EmbedBuilder()
+            const petEmbed = new EmbedBuilder()
                 .setColor("#FECEDE")
                 .setTitle(`${petName}`)
                 .setImage('https://cdn.discordapp.com/attachments/1247190694481756160/1248683005447508118/Group_13.png?ex=66648e2b&is=66633cab&hm=2ee06ebf27971955f989cfa358fcb6bcb0489b16b56bcbbe1d8f6b8b3853fed2&')
@@ -89,10 +101,10 @@ module.exports = {
                 .setFooter({text: `${userName}`})
                 .setTimestamp();
 
-            await interaction.followUp({ embeds: [exampleEmbed] });
+            await interaction.followUp({ embeds: [petEmbed] });
         } catch (error) {
-            await interaction.followUp("An error occurred while viewing your pet.");
             console.error(error);
+            await message.followUp("An error occurred while viewing your pet.");
         }
     }
 }
