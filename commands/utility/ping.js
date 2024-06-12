@@ -2,11 +2,11 @@ const { SlashCommandBuilder } = require("discord.js");
 
 const data = new SlashCommandBuilder()
     .setName("ping")
-    .setDescription("Yanıt olarak 'pong' yazar.");
+    .setDescription("Send a ping to server");
 
 
 async function execute(interaction) {
-    await interaction.reply("pong");
+    await interaction.reply("Meow!");
 }
 
 module.exports = {
