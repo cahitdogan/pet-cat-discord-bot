@@ -1,18 +1,19 @@
-const { doc, getDocFromServer } = require("firebase/firestore");
-const { db, guildsCollectionRef, usersCollectionRef } = require("@root/firebase.js");
-const { pet } = require("@root/prefix-commands/pet.js");
+const { doc, getDoc } = require("firebase/firestore/lite");
+const { db } = require("@root/firebase.js");
 
 
 module.exports = {
     name: "messageCreate",
     async execute(message) {
-        if ((!message.content.startsWith(".")) || (message.content.length <= 3)) return; //special prefixes should start with "."
+        if ((!message.content.startsWith(".")) || (message.content.length <= 5)) return; //Buradaki tersini almanın detaylarını öğren ve bu condition'ı genel olarak düşün
         
+        const userDocRef = doc(db, "users", message.author.id);
+        const guildDocRef = doc(db, "guilds", message.guildId);
+
         let guildPrefix;
         try {
-            const guildDocRef = doc(guildsCollectionRef, message.guildId);
-            const guildDocSnap = await getDocFromServer(guildDocRef);
-            guildPrefix = guildDocSnap.data().prefix;
+            const guildDocSnap = await getDoc(guildDocRef);
+            guildPrefix = guildDocSnap.get("prefix");
         } catch (error) {
             console.error("Error occurred:" + error);
         }
@@ -22,8 +23,6 @@ module.exports = {
 
 
         const endCharacter = Number(message.content.slice(-1));
-        
-        console.log(endCharacter);
 
         let command;
         let index = 0;
@@ -39,19 +38,34 @@ module.exports = {
             return;
         }
 
-        const authorDocRef = doc(usersCollectionRef, message.author.id);
-        const authorDocSnap = await getDocFromServer(authorDocRef);
-        const authorData = authorDocSnap.data();
-        const pet = authorData.pets[index];
-
-        switch (command) {
-            case `${prefix} pet `:
-                await message.reply("Başarılı");
-                break;
+        let petID;
+        getDoc(userDocRef)
+            .then(
+                result => { 
+                    const authorDocSnap = result;
+                    const pets = authorDocSnap.get("pets");
+                    const pet = pets[index];
+                    if (!pet) {
+                        message.reply("You don't have a pet with this number.");
+                        return;
+                    }
+                    petID = pet.petID;
+                    petOwnerState = pet.ownerState;
+                    commandHandler();
+                 },
+                 () => {message.reply("You must have a pet before you can use this command.");}
+            )
         
-            default:
-                await message.reply("There is no such command. (You can have a maximum of 9 pets)");
-                break;
+        async function commandHandler() {
+            switch (command) {
+                case `${prefix} pet `:
+                    await message.reply("Success!");
+                    break;
+            
+                default:
+                    await message.reply("There is no such command. (You can have a maximum of 9 pets)");
+                    break;
+            }
         }
     }
 }
