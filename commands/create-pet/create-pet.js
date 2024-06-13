@@ -107,10 +107,6 @@ module.exports = {
         
         async function showPet() {
             try {
-                const userDocSnap = await getDoc(userDocRef);
-                const userData = userDocSnap.data();
-                const { coins } = userData;
-
                 const petDocSnap = await getDoc(petDocRef);
                 const petData = petDocSnap.data();
                 const { level, health } = petData;
@@ -132,8 +128,7 @@ module.exports = {
                     )
                     .addFields(
                         { name: '\u200B', value: `🏅**Lvl:** ${level}`, inline: true },
-                        { name: '\u200B', value: `❤️ **Health:** ${health}`, inline: true },
-                        { name: '\u200B', value: `💰 **Coin:** ${coins}`, inline: true }
+                        { name: '\u200B', value: `❤️ **Health:** ${health}`, inline: true }
                     )
                     .setFooter({text: `${userName}`})
                     .setTimestamp();
