@@ -1,5 +1,6 @@
 const { doc, getDoc } = require("firebase/firestore/lite");
 const { db } = require("@root/firebase.js");
+const { petStatus } = require("@root/prefix-commands/pet-status.js");
 
 
 module.exports = {
@@ -29,37 +30,42 @@ module.exports = {
         if (isNaN(endCharacter)) {
             command = message.content + " ";
         } 
-        else if (endCharacter >= 2) { 
+        else if ( (2 <= endCharacter) && (endCharacter <= 3) ) { 
             command = message.content.slice(0, -1);
             index = endCharacter - 1;
         }
         else {
-            await message.reply("Number must be 2 or greater than 2 (max 9)");
+            await message.reply("Pet number must be 2 or 3");
             return;
         }
 
-        let petID;
+
         getDoc(userDocRef)
             .then(
-                result => { 
-                    const authorDocSnap = result;
+                authorDocSnap => { 
                     const pets = authorDocSnap.get("pets");
                     const pet = pets[index];
+
                     if (!pet) {
                         message.reply("You don't have a pet with this number.");
                         return;
                     }
-                    petID = pet.petID;
-                    petOwnerState = pet.ownerState;
-                    commandHandler();
+
+                    if (pet.ownerState === false) {
+                        const petDocRef = doc(db, "users", pet.ownerID, "pets", pet.petID);
+                        commandHandler(petDocRef);
+                    } else if (pet.ownerState === true) {
+                        const petDocRef = doc(userDocRef, "pets", pet.petID);
+                        commandHandler(petDocRef);
+                    }
                  },
                  () => {message.reply("You must have a pet before you can use this command.");}
             )
         
-        async function commandHandler() {
+        async function commandHandler(petDocRef) {
             switch (command) {
                 case `${prefix} pet `:
-                    await message.reply("Success!");
+                    await petStatus(message, petDocRef);
                     break;
             
                 default:
