@@ -1,9 +1,8 @@
 const {  EmbedBuilder } = require("discord.js");
-const { getDoc, doc } = require("firebase/firestore/lite");
-const { db } = require("@root/firebase.js");
+const { getDoc } = require("firebase/firestore/lite");
 
 module.exports = {
-    async petStatus(message, petDocRef, userName) {
+    async petStatus(message, petDocRef) {
         try {
             const petDocSnap = await getDoc(petDocRef);
             const petData = petDocSnap.data();
@@ -28,7 +27,7 @@ module.exports = {
                     { name: '\u200B', value: `🏅**Lvl:** ${level}`, inline: true },
                     { name: '\u200B', value: `❤️ **Health:** ${health}`, inline: true }
                 )
-                .setFooter({text: `${userName}`})
+                .setFooter({text: `${message.author.username}`})
                 .setTimestamp();
 
             await message.channel.send({ embeds: [petEmbed] });
