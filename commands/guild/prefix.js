@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const { db } = require("@root/firebase.js");
 const { updateDoc, doc } = require("firebase/firestore/lite");
+const { db } = require("../../firebase.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,7 +11,6 @@ module.exports = {
                 .setMaxLength(7)
                 .setDescription("WARNING: The prefix must start with a dot.")
                 .setRequired(true))
-        
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
     async execute(interaction) {

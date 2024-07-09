@@ -6,7 +6,7 @@ require('module-alias/register');
 
 
 //Create a new client
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessageReactions] });
 
 //Get slash command scripts and add them to client.commands collection
 client.commands = new Collection();

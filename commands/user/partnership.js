@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { setDoc, doc, getDoc, updateDoc } = require("firebase/firestore/lite");
 const { db } = require("../../firebase.js");
 
@@ -27,8 +27,8 @@ module.exports = {
     async execute(interaction) {
         if (interaction.options.getSubcommand() === 'invite') {
             const inviterUserID = interaction.user.id;
-            const inviterUserUsername = interaction.user.username;
             const invitedUserID = interaction.options.getUser("user").id;
+            const invitedUsername = interaction.options.getUser("user").username;
 
             if (inviterUserID === invitedUserID) {
                 await interaction.reply(`**<@${inviterUserID}>** | You cannot invite yourself into partnership`);
@@ -45,7 +45,7 @@ module.exports = {
                 await interaction.reply(`**<@${inviterUserID}>** | First you have to have a pet.`);
                 return;
             }
-            
+
             const inviterUserPets = inviterUserSnap.get("pets");
 
             if (inviterUserPets.length === 0) {
@@ -53,6 +53,9 @@ module.exports = {
                 return;
             }
 
+            // The pet we own cannot be in any index other than index 0
+            // So it is certain that the invitation is for index 0
+            // Therefore, if the inviter has a pet at index 0 but is not the real owner, the invitation is invalid
             const pet = inviterUserPets[0];
 
             if (pet.ownerState === false) {
@@ -60,30 +63,32 @@ module.exports = {
                 return;
             }
 
-            if (pet.partners[0] === invitedUserID || pet.partners[1] === invitedUserID) {
-                await interaction.reply(`**<@${invitedUserID}>** is already a partner.`);
-                return;
-            }
-            
-            if (pet.partners.length === 2) {
+            // A pet can have a maximum of 2 partners
+            if (pet.partners.length === 1) {
+                if (pet.partners[0].partnerID === invitedUserID) {
+                    await interaction.reply(`**<@${invitedUserID}>** is already a partner.`);
+                    return;
+                }
+            } else if (pet.partners.length === 2) {
                 await interaction.reply(`**<@${inviterUserID}>** | You cannot have more than 2 partners.`);
                 return;
             }
-            
+
+            const inviterUserUsername = interaction.user.username;
             const inviteMessage = await interaction.reply({ content: `Hey **<@${invitedUserID}>**! | **${inviterUserUsername}** invited you to be a partner in its pet. Do you agree to be partners? You have **5** minutes to decide.`, fetchReply: true });
             await inviteMessage.react("✅");
             await inviteMessage.react("⛔");
-            
+
             let decision;
             const collectorFilter = (reaction, user) => {
                 if (reaction.emoji.name === "✅" && user.id === invitedUserID) {
                     decision = true;
                     return true;
-                } 
+                }
                 else if (reaction.emoji.name === "⛔" && user.id === invitedUserID) {
                     decision = false;
                     return true;
-                } 
+                }
                 else false;
             }
 
@@ -94,38 +99,86 @@ module.exports = {
 
             collector.on('end', async (collected) => {
                 if (decision) {
-                        const invitedUserDoc = doc(db, "users", invitedUserID);
-                        let invitedUserSnap = await getDoc(invitedUserDoc);
+                    const invitedUserDoc = doc(db, "users", invitedUserID);
+                    let invitedUserSnap = await getDoc(invitedUserDoc);
 
-                        async function buildPartnership(invitedUserPets) {
-                            inviterUserPets[0].partners.push(invitedUserID);
-                            await updateDoc(inviterUserDoc, { pets: inviterUserPets });
+                    async function buildPartnership(invitedUserPets) {
+                        inviterUserPets[0].partners.push({ partnerID: invitedUserID, partnerUsername: invitedUsername });
+                        await updateDoc(inviterUserDoc, { pets: inviterUserPets });
 
-                            invitedUserPets.push({ petID:  pet.petID, petName: pet.petName, ownerState: false, ownerID: inviterUserID});
-                            await updateDoc(invitedUserDoc, { pets: invitedUserPets });
+                        invitedUserPets.push({ petID: pet.petID, petName: pet.petName, ownerState: false, ownerID: inviterUserID });
+                        await updateDoc(invitedUserDoc, { pets: invitedUserPets });
 
-                            await interaction.followUp("Invitation **accepted**. Please check your pet list.");
+                        await interaction.followUp("Invitation **accepted**. Please check your pet list.");
+                    }
+
+                    if (invitedUserSnap.exists()) {
+                        let invitedUserPets = invitedUserSnap.get("pets");
+
+                        if (invitedUserPets.length >= 3) {
+                            await interaction.followUp(`**<@${invitedUserID}>**, You cannot have more than 3 pets.`);
+                            return;
                         }
 
-                        if (invitedUserSnap.exists()) {
-                            let invitedUserPets = invitedUserSnap.get("pets");
-
-                            if (invitedUserPets.length === 3) {
-                                await interaction.followUp(`**<@${invitedUserID}>**, You cannot have more than 3 pets.`);
-                                return;
-                            }
-
-                            buildPartnership(invitedUserPets);
-                        } else {
-                            await setDoc(invitedUserDoc, { coins: 0, pets: [] });
-                            let invitedUserSnap = await getDoc(invitedUserDoc);
-                            let invitedUserPets = invitedUserSnap.get("pets");
-                            buildPartnership(invitedUserPets);
+                        buildPartnership(invitedUserPets);
+                    } else {
+                        try {
+                            await setDoc(invitedUserDoc, { coins: 0, pets: [] })
+                        } catch {
+                            return;
                         }
+
+                        buildPartnership([]);
+                    }
                 } else {
                     await interaction.followUp("The invitation was **declined**.");
                 }
             });
+        }
+
+        // Kullanıcı komutu kullandıktan sonra eğer varsa partnerlerinin bir listesi gönderilir.
+        // Listenin altına emojilerle partner sayısı kadar emoji eklenir (1 - 2)
+        // Kullanıcı emojilerden birisine tıkladığında ilgili partner silinir
+        if (interaction.options.getSubcommand() === 'remove-partner') {
+            const userId = interaction.user.id;
+            const userName = interaction.user.username;
+            const userDocRef = doc(db, "users", userId);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (!userDocSnap.exists()) {
+                await interaction.reply("You don't have a pet!");
+                return;
+            }
+
+            const pets = userDocSnap.get("pets");
+
+            if (pets.length === 0) {
+                await interaction.reply("You don't have a pet!");
+                return;
+            }
+
+            if (!pets[0].ownerState) {
+                await interaction.reply("You don't have your own pet!");
+                return;
+            }
+
+            const partners = pets[0].partners;
+            let partnersListString;
+
+            if (partners.length === 0) {
+                await interaction.reply("You don't have a partner!");
+                return;
+            } else if (partners.length === 1) {
+                partnersListString = `**1.  **${partners[0].partnerUsername}`;
+            } else if (partners.length === 2) {
+                partnersListString = `**1.  **${partners[0].partnerUsername} \\n **2.  **${partners[1].partnerUsername}`;
+            }
+
+            const partnersEmbed = new EmbedBuilder()
+                .setColor("#FECEDE")
+                .addFields({ name: `**${userName}'s** Partners`, value: partnersListString });
+
+            await interaction.reply({ embeds: [partnersEmbed] });
         }
     }
 }

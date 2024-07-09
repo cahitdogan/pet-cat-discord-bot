@@ -29,7 +29,7 @@ module.exports = {
             const userDocSnap = await getDoc(userDocRef);
             const petsArr = userDocSnap.get("pets");
 
-            if (petsArr.length > 3) {
+            if (petsArr.length > 2) {
                 await interaction.reply("You cannot have more than 3 pets.");
                 return;
             }

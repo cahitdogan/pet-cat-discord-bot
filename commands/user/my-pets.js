@@ -14,14 +14,14 @@ module.exports = {
         const userDocSnap = await getDoc(userDocRef);
 
         if (!userDocSnap.exists()) {
-            await interaction.reply(`<@${userID} | You have not a pet.`);
+            await interaction.reply(`<@${userID}> | You have not a pet.`);
             return;
         }
 
         const pets = userDocSnap.get("pets");
 
         if (pets.length === 0) {
-            await interaction.reply(`<@${userID} | You have not a pet.`);
+            await interaction.reply(`<@${userID}> | You have not a pet.`);
             return;
         }
 
