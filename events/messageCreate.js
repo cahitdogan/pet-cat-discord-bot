@@ -1,6 +1,6 @@
 const { doc, getDoc } = require("firebase/firestore/lite");
-const { db } = require("@root/firebase.js");
-const { petStatus } = require("@root/prefix-commands/pet-status.js");
+const { db } = require("../firebase.js");
+const { petStatus } = require("../prefix-commands/pet-status.js");
 
 
 module.exports = {
