@@ -1,4 +1,6 @@
-config.json
 node_modules
 test.js
-firebase.js
+x/a.js
+x/b.js
+assets/pets/cat.png
+commands/utility/reload.js
