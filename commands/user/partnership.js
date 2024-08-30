@@ -169,16 +169,55 @@ module.exports = {
                 await interaction.reply("You don't have a partner!");
                 return;
             } else if (partners.length === 1) {
-                partnersListString = `**1.  **${partners[0].partnerUsername}`;
+                partnersListString = `Which partner do you want to remove? \\n **1.  **${partners[0].partnerUsername}`;
             } else if (partners.length === 2) {
-                partnersListString = `**1.  **${partners[0].partnerUsername} \\n **2.  **${partners[1].partnerUsername}`;
+                partnersListString = `Which partner do you want to remove? \\n **1.  **${partners[0].partnerUsername} \\n **2.  **${partners[1].partnerUsername}`;
             }
 
             const partnersEmbed = new EmbedBuilder()
                 .setColor("#FECEDE")
                 .addFields({ name: `**${userName}'s** Partners`, value: partnersListString });
 
-            await interaction.reply({ embeds: [partnersEmbed] });
+            const message = await interaction.reply({ embeds: [partnersEmbed] });
+            
+            if (partners.length === 1) {
+              await message.react('1️⃣');
+            } else if (partners.length === 2) {
+              await message.react('1️⃣');
+              await message.react('2️⃣');
+            }
+            
+            let decision;
+            const collectorFilter = (reaction, user) => {
+              if (reaction.emoji.name === "1️⃣" && user.id === userId) {
+                decision = 1;
+                return true;
+              }
+              else if (reaction.emoji.name === "2️⃣" && user.id === userId) {
+                decision = 2;
+                return true;
+              }
+              else false;
+            }
+            
+            const collector = message.createReactionCollector({ filter: collectorFilter, time: 300_000, max: 1 });
+
+            collector.on('collect', (reaction, user) => {
+            });
+
+            collector.on('end', async (collected) => {
+              if (decision === 1) {
+                const partnerId = partners[0].partnerID;
+                
+                pets[0].partners.shift();
+                await updateDoc(userDocRef, { pets: pets });
+                
+                const partnerDocRef = doc(db, "users", partnerId);
+                const partnerDocSnap = await getDoc(partnerDocRef);
+                const partnerPets = partnerDocSnap.get('pets');
+                
+              }
+            }
         }
     }
 }
