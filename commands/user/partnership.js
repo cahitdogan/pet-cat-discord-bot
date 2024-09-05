@@ -89,7 +89,7 @@ module.exports = {
                     decision = false;
                     return true;
                 }
-                else false;
+                else return false;
             }
 
             const collector = inviteMessage.createReactionCollector({ filter: collectorFilter, time: 300_000, max: 1 });
@@ -169,22 +169,18 @@ module.exports = {
                 await interaction.reply("You don't have a partner!");
                 return;
             } else if (partners.length === 1) {
-                partnersListString = `Which partner do you want to remove? \\n **1.  **${partners[0].partnerUsername}`;
+                partnersListString = `Which partner do you want to remove? \n **1. **${partners[0].partnerUsername}`;
             } else if (partners.length === 2) {
-                partnersListString = `Which partner do you want to remove? \\n **1.  **${partners[0].partnerUsername} \\n **2.  **${partners[1].partnerUsername}`;
+                partnersListString = `Which partner do you want to remove? \n **1. **${partners[0].partnerUsername} \n **2. **${partners[1].partnerUsername}`;
             }
 
-            const partnersEmbed = new EmbedBuilder()
-                .setColor("#FECEDE")
-                .addFields({ name: `**${userName}'s** Partners`, value: partnersListString });
-
-            const message = await interaction.reply({ embeds: [partnersEmbed] });
+            const message = await interaction.reply({ content: `**${userName}'s** Partners \n ${partnersListString}`, fetchReply: true });
             
             if (partners.length === 1) {
-              await message.react('1️⃣');
+              await message.react("1️⃣");
             } else if (partners.length === 2) {
-              await message.react('1️⃣');
-              await message.react('2️⃣');
+              await message.react("1️⃣");
+              await message.react("2️⃣");
             }
             
             let decision;
@@ -197,7 +193,7 @@ module.exports = {
                 decision = 2;
                 return true;
               }
-              else false;
+              else return false;
             }
             
             const collector = message.createReactionCollector({ filter: collectorFilter, time: 300_000, max: 1 });
@@ -208,6 +204,7 @@ module.exports = {
             collector.on('end', async (collected) => {
               if (decision === 1) {
                 const partnerId = partners[0].partnerID;
+                const petId = pets[0].petID;
                 
                 pets[0].partners.shift();
                 await updateDoc(userDocRef, { pets: pets });
@@ -215,9 +212,166 @@ module.exports = {
                 const partnerDocRef = doc(db, "users", partnerId);
                 const partnerDocSnap = await getDoc(partnerDocRef);
                 const partnerPets = partnerDocSnap.get('pets');
-                
+
+                for (let i = 0; i < partnerPets.length; i++) {
+                    const pet = partnerPets[i];
+                    
+                    if (pet.petID === petId) {
+                        partnerPets.splice(i, i + 1);
+                        await updateDoc(partnerDocRef, { pets: partnerPets });
+                        await interaction.followUp("Partner removed.");
+                    }
+                }
               }
+            })
+        }
+
+        if (interaction.options.getSubcommand() === 'leave-partnership') {
+            const userDocRef = doc(db, "users", interaction.user.id);
+            const userDocSnap = await getDoc(userDocRef);
+            
+            if (!userDocSnap.exists()) {
+                await interaction.reply(`**<@${interaction.user.id}>** | You're not the partner of any pet.`);
+                return;
             }
+
+            const pets = userDocSnap.get("pets");
+
+            if (pets.length === 0) {
+                await interaction.reply(`**<@${interaction.user.id}>** | You're not the partner of any pet.`);
+                return;
+            }
+
+            let replyString = "**For which pet do you want to leave the partnership?** \n";
+            let counter = 1;
+
+            for (let i = 0; i < pets.length; i++) {
+                const pet = pets[i];
+
+                if (pet.ownerState === false) {
+                    replyString += `**${counter}.** ${pet.petName} \n`;
+                    counter++;
+                }
+            }
+
+            let message;
+            if (counter > 1) {
+                message = await interaction.reply({ content: replyString, fetchReply: true });
+            }
+            else if (counter === 1) {
+                message = await interaction.reply({ content: "You're not the partner of any pet.", fetchReply: true });
+            }
+
+            if (counter === 2) {
+                await message.react("1️⃣");
+            } else if (counter === 3) {
+                await message.react("1️⃣");
+                await message.react("2️⃣");
+            }
+
+            let decision;
+            const collectorFilter = (reaction, user) => {
+              if (reaction.emoji.name === "1️⃣" && user.id === interaction.user.id) {
+                decision = 1;
+                return true;
+              }
+              else if (reaction.emoji.name === "2️⃣" && user.id === interaction.user.id) {
+                decision = 2;
+                return true;
+              }
+              else return false;
+            }
+
+            const collector = message.createReactionCollector({ filter: collectorFilter, time: 300_000, max: 1 });
+
+            collector.on('collect', (reaction, user) => {
+            });
+
+            collector.on('end', async (collected) => {
+                if (decision === 1) {
+                    if (pets[0].ownerState === false) {
+                        const ownerId = pets[0].ownerID;
+                        const ownerDocRef = doc(db, "users", ownerId);
+                        const ownerDocSnap = await getDoc(ownerDocRef);
+                        const ownerPets = ownerDocSnap.get("pets")
+                        const ownerPartners = ownerPets[0].partners;
+
+                        pets.splice(0, 1);
+                        await updateDoc(userDocRef, { pets: pets });
+
+                        for (let i = 0; i < ownerPartners.length; i++) {
+                            const ownerPartner = ownerPartners[i];
+                            
+                            if (ownerPartner.partnerID === interaction.user.id) {
+                                ownerPets[0].partners.splice(i, i + 1);
+                                await updateDoc(ownerDocRef, { pets: ownerPets })
+                                break;
+                            }
+                        }
+                    } else {
+                        const ownerId = pets[1].ownerID;
+                        const ownerDocRef = doc(db, "users", ownerId);
+                        const ownerDocSnap = await getDoc(ownerDocRef);
+                        const ownerPets = ownerDocSnap.get("pets")
+                        const ownerPartners = ownerPets[0].partners;
+
+                        pets.splice(1, 2);
+                        await updateDoc(userDocRef, { pets: pets });
+
+                        for (let i = 0; i < ownerPartners.length; i++) {
+                            const ownerPartner = ownerPartners[i];
+                            
+                            if (ownerPartner.partnerID === interaction.user.id) {
+                                ownerPets[0].partners.splice(i, i + 1);
+                                await updateDoc(ownerDocRef, { pets: ownerPets })
+                                break;
+                            }
+                        }
+                    }
+                } else if (decision === 2) {
+                    if (pets[0].ownerState === false) {
+                        const ownerId = pets[1].ownerID;
+                        const ownerDocRef = doc(db, "users", ownerId);
+                        const ownerDocSnap = await getDoc(ownerDocRef);
+                        const ownerPets = ownerDocSnap.get("pets")
+                        const ownerPartners = ownerPets[0].partners;
+
+                        pets.splice(1, 2);
+                        await updateDoc(userDocRef, { pets: pets });
+
+                        for (let i = 0; i < ownerPartners.length; i++) {
+                            const ownerPartner = ownerPartners[i];
+                            
+                            if (ownerPartner.partnerID === interaction.user.id) {
+                                ownerPets[0].partners.splice(i, i + 1);
+                                await updateDoc(ownerDocRef, { pets: ownerPets })
+                                break;
+                            }
+                        }
+                    } else {
+                        const ownerId = pets[2].ownerID;
+                        const ownerDocRef = doc(db, "users", ownerId);
+                        const ownerDocSnap = await getDoc(ownerDocRef);
+                        const ownerPets = ownerDocSnap.get("pets")
+                        const ownerPartners = ownerPets[0].partners;
+
+                        pets.splice(2, 3);
+                        await updateDoc(userDocRef, { pets: pets });
+
+                        for (let i = 0; i < ownerPartners.length; i++) {
+                            const ownerPartner = ownerPartners[i];
+                            
+                            if (ownerPartner.partnerID === interaction.user.id) {
+                                ownerPets[0].partners.splice(i, i + 1);
+                                await updateDoc(ownerDocRef, { pets: ownerPets })
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                interaction.followUp("You've successfully left the partnership.")
+            })
         }
     }
 }
