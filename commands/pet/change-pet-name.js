@@ -3,7 +3,7 @@ const { doc, updateDoc, getDoc } = require("firebase/firestore/lite");
 const { db } = require("../../firebase.js");
 
 module.exports = {
-    cooldown: 36000,
+    cooldown: 3,
     data: new SlashCommandBuilder()
         .setName("change-pet-name")
         .setDescription("Change your pet's name")
@@ -29,9 +29,10 @@ module.exports = {
                     const petDocRef = doc(userDocRef, "pets", pets[0].petID);
                     await updateDoc(petDocRef, {petName: newPetName});
 
-                    const partner_0_ID = pets[0].partners[0];
+                    const partner_0 = pets[0].partners[0];
 
-                    if (partner_0_ID) {
+                    if (partner_0) {
+                        const partner_0_ID = pets[0].partners[0].petID;
                         const partner_0_DocRef = doc(db, "users", partner_0_ID);
                         const partner_0_DocSnap = await getDoc(partner_0_DocRef);
                         const partner_0_pets = partner_0_DocSnap.get("pets");
