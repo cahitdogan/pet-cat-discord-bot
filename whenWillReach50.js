@@ -1,6 +1,6 @@
-const { setDoc, doc, getDoc, updateDoc } = require("firebase/firestore/lite");
+const { getDoc } = require("firebase/firestore/lite");
 
-export default function whenWillReach50(stat, userId) {
+export default async function whenWillReach50(stat, petDocRef) {
     const statCoefficients = {
         "water": 0.6,
         "sleep": 0.5,
@@ -11,11 +11,12 @@ export default function whenWillReach50(stat, userId) {
     }
 
     const coefficient = statCoefficients[stat];
-    const timestamp = Date.now();
-    const userDocRef = doc(db, "users", userId);
-    const userDocSnap
 
-    // as math equation    --->    50 = lastValue - (reachTime - timestamp) * coefficient
-    const reachTime = (lastValue - 50) / coefficient + timestamp;
+    const petDocSnap = await getDoc(petDocRef);
+    const lastValue = petDocSnap.get(`stats.${stat}.value`);
+    const lastTimestamp = petDocSnap.get(`stats.${stat}.timestamp`);
+
+    // as math equation    --->    50 = lastValue - (reachTime - lastTimestamp) * coefficient
+    const reachTime = (lastValue - 50) / coefficient + lastTimestamp;
     return reachTime;
 }
