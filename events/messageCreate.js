@@ -42,24 +42,26 @@ module.exports = {
 
         getDoc(userDocRef)
             .then(
-                authorDocSnap => { 
-                    const pets = authorDocSnap.get("pets");
-                    const pet = pets[index];
+                authorDocSnap => {
+                    if (authorDocSnap.exists()) {
+                        const pets = authorDocSnap.get("pets");
+                        const pet = pets[index];
 
-                    if (!pet) {
-                        message.reply("You don't have a pet with this number.");
-                        return;
-                    }
+                        if (!pet) {
+                            message.reply("You don't have a pet with this number.");
+                            return;
+                        }
 
-                    if (pet.ownerState === false) {
-                        const petDocRef = doc(db, "users", pet.ownerID, "pets", pet.petID);
-                        commandHandler(petDocRef);
-                    } else if (pet.ownerState === true) {
-                        const petDocRef = doc(userDocRef, "pets", pet.petID);
-                        commandHandler(petDocRef);
+                        if (pet.ownerState === false) {
+                            const petDocRef = doc(db, "users", pet.ownerID, "pets", pet.petID);
+                            commandHandler(petDocRef);
+                        } else if (pet.ownerState === true) {
+                            const petDocRef = doc(userDocRef, "pets", pet.petID);
+                            commandHandler(petDocRef);
+                        }
                     }
-                 },
-                 () => {message.reply("You must have a pet before you can use this command.");}
+                    else { message.reply("You must have a pet before you can use this command."); }
+                }
             )
         
         async function commandHandler(petDocRef) {
