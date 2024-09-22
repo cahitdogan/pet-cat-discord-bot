@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { setDoc, doc, getDoc, updateDoc } = require("firebase/firestore/lite");
 const { db } = require("../../firebase.js");
+const { whenWillReach50 } = require("../../functions/whenWillReach50.js");
 
 module.exports = {
     cooldown: 15,
@@ -86,6 +87,15 @@ module.exports = {
             try {
                 const now = Date.now();
 
+                const statsStrArr = ["water", "food", "sleep", "play", "shower", "toilet"];
+                const results = await Promise.all(statsStrArr.map(statStr => whenWillReach50(statStr, petDocRef, true, now)));
+
+                const whenWillReach50Arr = {};
+                for (let i = 0; i < statsStrArr.length; i++) {
+                    const statStr = statsStrArr[i];
+                    whenWillReach50Arr[statStr] = results[i];
+                }
+
                 await setDoc(petDocRef, {
                     ownerName: userName,
                     petName: petName,
@@ -93,12 +103,12 @@ module.exports = {
                     exp: 0,
                     health: 100,
                     stats: {
-                        water: {value: 100, timestamp: now},
-                        food: {value: 100, timestamp: now},
-                        sleep: {value: 100, timestamp: now},
-                        play: {value: 100, timestamp: now},
-                        shower: {value: 100, timestamp: now},
-                        toilet: {value: 100, timestamp: now},
+                        water: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.water},
+                        food: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.food},
+                        sleep: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.sleep},
+                        play: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.play},
+                        shower: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.shower},
+                        toilet: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.toilet},
                     },
                     accessories: {}
                 });
