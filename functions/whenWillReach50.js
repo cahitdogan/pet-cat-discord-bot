@@ -1,7 +1,7 @@
 const { getDoc } = require("firebase/firestore/lite");
 
 module.exports = {
-    async whenWillReach50(statName, petDocRef, isFirstTime, timestamp) {
+    async whenWillReach50(statName, petDocRef, timestamp, firstTimeCalculation) {
         const statCoefficients = {
             "water": 0.000000714285714,
             "sleep": 0.000000578703704,
@@ -14,8 +14,8 @@ module.exports = {
         const coefficient = statCoefficients[statName];
 
         const petDocSnap = await getDoc(petDocRef);
-        const lastValue = isFirstTime ? 100 : petDocSnap.get(`stats.${statName}.value`);
-        const lastTimestamp = isFirstTime ? timestamp : petDocSnap.get(`stats.${statName}.timestamp`);
+        const lastValue = firstTimeCalculation ? 100 : petDocSnap.get(`stats.${statName}.value`);
+        const lastTimestamp = firstTimeCalculation ? timestamp : petDocSnap.get(`stats.${statName}.timestamp`);
 
         // as math equation    --->    50 = lastValue - (reachTime - lastTimestamp) * coefficient
         const reachTime = (lastValue - 50) / coefficient + lastTimestamp;

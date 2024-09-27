@@ -1,4 +1,5 @@
 const { getDoc, updateDoc } = require("firebase/firestore/lite");
+const { lessThan50 } = require("./lessThan50");
 
 module.exports = {
     async timeDependentDecrease(statName, petDocRef) {
@@ -29,10 +30,17 @@ module.exports = {
         const lastTimestamp = statObj.timestamp;
         const subtractionValue = (newTimestamp - lastTimestamp) * coefficient;
 
-        statObj.value = statObj.value - subtractionValue;
+        statObj.value = (statObj.value - subtractionValue) >= 0 ? (statObj.value - subtractionValue) : 0;
         statObj.timestamp = newTimestamp;
 
-        await updateDoc(petDocRef, { [`stats.${statName}`]: { value: statObj.value, timestamp: statObj.timestamp } });
+        if (statObj.value <= 50) {
+            await lessThan50(newTimestamp, lastTimestamp, petDocRef, statName, coefficient)
+        } else {
+            
+        }
+
+        await updateDoc(petDocRef, { [`stats.${statName}.value`]: statObj.value });
+        await updateDoc(petDocRef, { [`stats.${statName}.timestamp`]: statObj.timestamp });
 
         return statObj;
     }

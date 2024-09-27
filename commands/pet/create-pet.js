@@ -86,9 +86,8 @@ module.exports = {
 
             try {
                 const now = Date.now();
-
                 const statsStrArr = ["water", "food", "sleep", "play", "shower", "toilet"];
-                const results = await Promise.all(statsStrArr.map(statStr => whenWillReach50(statStr, petDocRef, true, now)));
+                const results = await Promise.all(statsStrArr.map(statStr => whenWillReach50(statStr, petDocRef, now, true)));
 
                 const whenWillReach50Arr = {};
                 for (let i = 0; i < statsStrArr.length; i++) {
@@ -102,13 +101,14 @@ module.exports = {
                     level: 0,
                     exp: 0,
                     health: 100,
+                    allStatsGreaterThan50: true,
                     stats: {
-                        water: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.water},
-                        food: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.food},
-                        sleep: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.sleep},
-                        play: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.play},
-                        shower: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.shower},
-                        toilet: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.toilet},
+                        water: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.water, isFirstTime: true},
+                        food: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.food, isFirstTime: true},
+                        sleep: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.sleep, isFirstTime: true},
+                        play: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.play, isFirstTime: true},
+                        shower: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.shower, isFirstTime: true},
+                        toilet: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.toilet, isFirstTime: true},
                     },
                     accessories: {}
                 });
