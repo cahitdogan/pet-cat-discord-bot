@@ -1,30 +1,31 @@
 const { EmbedBuilder } = require("discord.js");
-const { getDoc } = require("firebase/firestore/lite");
+const { getDoc, updateDoc } = require("firebase/firestore/lite");
 const { timeDependentDecrease } = require("../functions/timeDependentDecrease");
 
 module.exports = {
     async petStatus(message, petDocRef) {
-
-        let petDocSnap;
-        try {
-            petDocSnap = await getDoc(petDocRef);
-        } catch (error) {
-            console.error(error);
-            await message.channel.send("There was a problem fetching pet information.");
-            return;
-        }
-
-        const petData = petDocSnap.data();
-        const { level, health, petName } = petData;
         const statsStrArr = ["water", "food", "sleep", "play", "shower", "toilet"];
-
         const statsArr = await Promise.all(statsStrArr.map(statStr => timeDependentDecrease(statStr, petDocRef)));
 
         const stats = {};
         for (let i = 0; i < statsStrArr.length; i++) {
-            statsArr[i].value = parseFloat(statsArr[i].value.toFixed(2));
+            statsArr[i].value = statsArr[i].value.toFixed(0);
             const statStr = statsStrArr[i];
             stats[statStr] = statsArr[i];
+
+            if (stats[statStr].value <= 50) {
+                await updateDoc(petDocRef, { allStatsGreaterThan50: false });
+            }
+        }
+
+        const petDocSnap = await getDoc(petDocRef);
+        const pet = petDocSnap.data();
+        const { level, petName, allStatsGreaterThan50, allStatsGreaterThan50Timestamp} = pet;
+        let health = pet.health;
+
+        if (allStatsGreaterThan50) {
+            health = health + (Date.now() - allStatsGreaterThan50Timestamp) * 0.00005;
+            await updateDoc(petDocRef, { health: health, allStatsGreaterThan50Timestamp: Date.now() });
         }
 
         const petEmbed = new EmbedBuilder()
@@ -43,7 +44,7 @@ module.exports = {
             )
             .addFields(
                 { name: '\u200B', value: `🏅**Lvl:** ${level}`, inline: true },
-                { name: '\u200B', value: `❤️ **Health:** ${health}`, inline: true }
+                { name: '\u200B', value: `❤️ **Health:** ${health.toFixed(0)}`, inline: true }
             )
             .setFooter({ text: `${message.author.username}` })
             .setTimestamp();
