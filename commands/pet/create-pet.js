@@ -94,21 +94,23 @@ module.exports = {
                     const statStr = statsStrArr[i];
                     whenWillReach50Arr[statStr] = results[i];
                 }
-
+                
                 await setDoc(petDocRef, {
                     ownerName: userName,
                     petName: petName,
                     level: 0,
                     exp: 0,
                     health: 100,
-                    allStatsGreaterThan50: true,
+                    statsGreaterThan50Counter: 6,
+                    allStatsGreaterThan50Timestamp: now,
+                    firstWhenWillReach50Value: now, //foodCare yazarken dikkat et
                     stats: {
-                        water: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.water, isFirstTime: true},
-                        food: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.food, isFirstTime: true},
-                        sleep: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.sleep, isFirstTime: true},
-                        play: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.play, isFirstTime: true},
-                        shower: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.shower, isFirstTime: true},
-                        toilet: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.toilet, isFirstTime: true},
+                        water: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.water, isFirstTimeLessThan50: true, isLessThan50: false},
+                        food: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.food, isFirstTimeLessThan50: true, isLessThan50: false},
+                        sleep: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.sleep, isFirstTimeLessThan50: true, isLessThan50: false},
+                        play: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.play, isFirstTimeLessThan50: true, isLessThan50: false},
+                        shower: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.shower, isFirstTimeLessThan50: true, isLessThan50: false},
+                        toilet: {value: 100, timestamp: now, whenWillReach50: whenWillReach50Arr.toilet, isFirstTimeLessThan50: true, isLessThan50: false}
                     },
                     accessories: {}
                 });
