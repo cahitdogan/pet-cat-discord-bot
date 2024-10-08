@@ -3,19 +3,19 @@ const { timeDependentDecrease } = require("../functions/timeDependentDecrease");
 const { whenWillReach50 } = require("../functions/whenWillReach50");
 
 module.exports = {
-    async foodCare(message, petDocRef) {
-        const food = await timeDependentDecrease("food", petDocRef);
-        let increasedFoodValue = food.value + 25;
-        if (increasedFoodValue > 100) increasedFoodValue = 100;
-        await updateDoc(petDocRef, { "stats.food.value": increasedFoodValue, "stats.food.timestamp": Date.now() });
+    async sleepCare(message, petDocRef) {
+        const sleep = await timeDependentDecrease("sleep", petDocRef);
+        let increasedSleepValue = sleep.value + 25;
+        if (increasedSleepValue > 100) increasedSleepValue = 100;
+        await updateDoc(petDocRef, { "stats.sleep.value": increasedSleepValue, "stats.sleep.timestamp": Date.now() });
 
-        if (increasedFoodValue > 50) {
+        if (increasedSleepValue > 50) {
             const petDocSnap = await getDoc(petDocRef);
-            if (food.value <= 50) {
+            if (sleep.value <= 50) {
                 let statsGreaterThan50Counter = petDocSnap.get("statsGreaterThan50Counter");
                 await updateDoc(petDocRef, { 
                     statsGreaterThan50Counter: ++statsGreaterThan50Counter,
-                    "stats.food.isLessThan50": false
+                    "stats.sleep.isLessThan50": false
                 });
 
                 if (statsGreaterThan50Counter === 6) {
@@ -23,14 +23,14 @@ module.exports = {
                 }
             }
 
-            const whenWillReach50Value = await whenWillReach50("food", petDocRef);
+            const whenWillReach50Value = await whenWillReach50("sleep", petDocRef);
             await updateDoc(petDocRef, { 
-                "stats.food.isFirstTimeLessThan50": true, 
-                "stats.food.whenWillReach50": whenWillReach50Value
+                "stats.sleep.isFirstTimeLessThan50": true, 
+                "stats.sleep.whenWillReach50": whenWillReach50Value
             });
 
         }
 
-        await message.reply(`Success! Food status value: ${increasedFoodValue.toFixed(0)}`);
+        await message.reply(`Success! sleep status value: ${increasedSleepValue.toFixed(0)}`);
     }
 }
