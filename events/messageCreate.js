@@ -1,7 +1,12 @@
 const { doc, getDoc } = require("firebase/firestore/lite");
 const { db } = require("../firebase.js");
 const { petStatus } = require("../prefix-commands/pet-status.js");
-
+const { foodCare } = require("../prefix-commands/foodCare.js");
+const { toiletCare } = require("../prefix-commands/toiletCare.js");
+const { waterCare } = require("../prefix-commands/waterCare.js");
+const { playCare } = require("../prefix-commands/playCare.js");
+const { sleepCare } = require("../prefix-commands/sleepCare.js");
+const { showerCare } = require("../prefix-commands/showerCare.js");
 
 module.exports = {
     name: "messageCreate",
@@ -21,7 +26,6 @@ module.exports = {
         const prefix = guildPrefix ?? ".p";
 
         if (!message.content.startsWith(prefix + " ")) return;
-
 
         const endCharacter = Number(message.content.slice(-1));
 
@@ -68,6 +72,30 @@ module.exports = {
             switch (command) {
                 case `${prefix} pet `:
                     await petStatus(message, petDocRef);
+                    break;
+
+                case `${prefix} food `:
+                    await foodCare(message, petDocRef);
+                    break;
+
+                case `${prefix} shower `:
+                    await showerCare(message, petDocRef);
+                    break;
+            
+                case `${prefix} sleep `:
+                    await sleepCare(message, petDocRef);
+                    break;
+        
+                case `${prefix} play `:
+                    await playCare(message, petDocRef);
+                    break;
+        
+                case `${prefix} water `:
+                    await waterCare(message, petDocRef);
+                    break;
+        
+                case `${prefix} toilet `:
+                    await toiletCare(message, petDocRef);
                     break;
             
                 default:

@@ -17,7 +17,7 @@ module.exports = {
         const lastTimestamp = firstTimeCalculation ? timestamp : petDocSnap.get(`stats.${statName}.timestamp`);
         // as math equation    --->    50 = lastValue - (reachTime - Date.time()) * coefficient
         const reachTime = (lastValue - 50) / coefficient + lastTimestamp;
-
+        
         const firstWhenWillReach50Value = petDocSnap.get("firstWhenWillReach50Value");
         if (reachTime < firstWhenWillReach50Value) {
             await updateDoc(petDocRef, { firstWhenWillReach50Value: reachTime });
