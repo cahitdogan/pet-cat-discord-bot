@@ -2,6 +2,8 @@
 
 A Discord bot that lets users create and take care of virtual pet cats. Users can manage their pet's needs like food, water, sleep, and more.
 
+![Pet Cat Bot Logo](./bot-ss.png)
+
 ## Features
 
 - Create your own virtual pet cat
